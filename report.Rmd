@@ -1,0 +1,1170 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# STAT 349 Final Project Report
+### Kenny Jin
+
+```{r}
+library(tseries)
+library(TSA)
+```
+
+Note: log based 10 is always used in this project
+Some of the dataset is replaced because of the length.
+Current datasets (\* means replaced):
+
+\*BLL
+F
+\*LLY
+LOW
+MCO
+MSFT
+PFE
+ROK
+\*TRV
+\*TXT
+
+
+```{r}
+library(readxl)    
+read_excel_allsheets <- function(filename, tibble = FALSE) {
+    # I prefer straight data.frames
+    # but if you like tidyverse tibbles (the default with read_excel)
+    # then just pass tibble = TRUE
+    sheets <- readxl::excel_sheets(filename)
+    x <- lapply(sheets, function(X) readxl::read_excel(filename, sheet = X))
+    if(!tibble) x <- lapply(x, as.data.frame)
+    names(x) <- sheets
+    x
+}
+mysheets <- read_excel_allsheets("KennyJin.xlsx")
+```
+
+```{r}
+select_best_model <- function(data, max_p=2, max_q=2) {
+  min_ssr <- Inf
+  best_param <- c(-1, -1)
+  best_model <- NULL
+  # Find the model with the smallest sum square of residuals
+  for (p in 1:max_p) {
+    for (q in 1:max_q) {
+      capture.output(model <- garch(x=data,order=c(p,q)))
+      ssr <- sum(na.omit(model$residuals)^2)
+      if (ssr < min_ssr) {
+        min_ssr <- ssr
+        best_param <- c(p, q)
+        best_model <- model
+      }
+    }
+  }
+  print(min_ssr)
+  print(best_param)
+  return(best_param)
+}
+```
+
+
+
+# 1 Steps 1-3
+
+## 1.1 Dataset 1: Stock BLL
+
+```{r}
+BLL = mysheets$BLL
+BLL.return = na.omit(BLL$`Log Return`)
+```
+
+
+### 1.1.1 
+
+```{r}
+# prints ssr and best parameters
+best_params <- select_best_model(BLL.return)
+```
+
+
+
+```{r}
+o = capture.output(mpq <- garch(x=BLL.return,order=best_params))
+```
+
+```{r}
+summary(mpq)
+```
+
+
+The best fitted model is GARCH(1,2) with the following estimated parameter values and standard errors.
+
+Report the sum of the squared error of the final model.
+
+```{r}
+sum(na.omit(mpq$residuals)^2)
+```
+
+
+State the reason why this model is the final model.
+
+GARCH(1,2) gives the smallest sum of squared residuals for this dataset.
+
+### 1.1.2 Some diagnostic results
+
+```{r}
+shapiro.test(na.omit(residuals(mpq)))
+jarque.bera.test(na.omit(residuals(mpq)))
+cat('skewness: ', skewness(na.omit(residuals(mpq))), '\n')
+cat('kurtosis: ', kurtosis(na.omit(residuals(mpq))))
+```
+
+
+```{r}
+par(mfrow=c(1,2))
+plot(BLL$Date[-1], BLL.return, type='l', xlab='Time', ylab='Log Return')
+# plot fitted residuals of the best GARCH model
+plot(residuals(mpq),type='h',ylab='standardized residuals')
+```
+
+Figure: The left panel is the log return original series from 01/04/2005 to
+03/20/2020. The right panel is the fitted residuals (standardized returns or pseudo-
+returns.)
+
+```{r}
+par(mfrow=c(1,2))
+qqnorm(residuals(mpq)); qqline(residuals(mpq))
+acf(residuals(mpq)^2,na.action=na.omit)
+```
+
+
+Figure: The left panel is the residual QQ plot. The right panel is the squared residual ACF plot.
+
+```{r}
+BLL.residual=na.omit(residuals(mpq))
+```
+
+
+## 1.2-1.10 Same as 1.1
+
+## 1.2 Dataset 1: Stock F
+
+```{r}
+F = mysheets$F
+F.return = na.omit(F$`Log Return`)
+```
+
+
+### 1.2.1 
+
+```{r}
+# prints ssr and best parameters
+best_params <- select_best_model(F.return)
+```
+
+
+
+```{r}
+o = capture.output(mpq <- garch(x=F.return,order=best_params))
+```
+
+```{r}
+summary(mpq)
+```
+
+
+The best fitted model is GARCH(1,2) with the following estimated parameter values and standard errors.
+
+Report the sum of the squared error of the final model.
+
+```{r}
+sum(na.omit(mpq$residuals)^2)
+```
+
+
+State the reason why this model is the final model.
+
+GARCH(1,2) gives the smallest sum of squared residuals for this dataset.
+
+### 1.2.2 Some diagnostic results
+
+```{r}
+shapiro.test(na.omit(residuals(mpq)))
+jarque.bera.test(na.omit(residuals(mpq)))
+cat('skewness: ', skewness(na.omit(residuals(mpq))), '\n')
+cat('kurtosis: ', kurtosis(na.omit(residuals(mpq))))
+```
+
+
+```{r}
+par(mfrow=c(1,2))
+plot(F$Date[-1], F.return, type='l', xlab='Time', ylab='Log Return')
+# plot fitted residuals of the best GARCH model
+plot(residuals(mpq),type='h',ylab='standardized residuals')
+```
+
+Figure: The left panel is the log return original series from 01/04/2005 to
+03/20/2020. The right panel is the fitted residuals (standardized returns or pseudo-
+returns.)
+
+```{r}
+par(mfrow=c(1,2))
+qqnorm(residuals(mpq)); qqline(residuals(mpq))
+acf(residuals(mpq)^2,na.action=na.omit)
+```
+
+
+Figure: The left panel is the residual QQ plot. The right panel is the squared residual ACF plot.
+
+```{r}
+F.residual=na.omit(residuals(mpq))
+```
+
+## 1.3 Dataset 1: Stock LLY
+
+```{r}
+LLY = mysheets$LLY
+LLY.return = na.omit(LLY$`Log Return`)
+```
+
+
+The original log return series is plotted in Figure on the left panel. The fitted
+residuals (standardized returns or pseudo-returns) are plotted on the right panel.
+
+### 1.3.1 
+
+```{r}
+# prints ssr and best parameters
+best_params <- select_best_model(LLY.return)
+```
+
+
+
+```{r}
+o = capture.output(mpq <- garch(x=LLY.return,order=best_params))
+```
+
+```{r}
+summary(mpq)
+```
+
+
+The best fitted model is GARCH(1,2) with the following estimated parameter values and standard errors.
+
+Report the sum of the squared error of the final model.
+
+```{r}
+sum(na.omit(mpq$residuals)^2)
+```
+
+
+State the reason why this model is the final model.
+
+GARCH(1,2) gives the smallest sum of squared residuals for this dataset.
+
+### 1.3.2 Some diagnostic results
+
+```{r}
+shapiro.test(na.omit(residuals(mpq)))
+jarque.bera.test(na.omit(residuals(mpq)))
+cat('skewness: ', skewness(na.omit(residuals(mpq))), '\n')
+cat('kurtosis: ', kurtosis(na.omit(residuals(mpq))))
+```
+
+
+```{r}
+par(mfrow=c(1,2))
+plot(LLY$Date[-1], LLY.return, type='l', xlab='Time', ylab='Log Return')
+# plot fitted residuals of the best GARCH model
+plot(residuals(mpq),type='h',ylab='standardized residuals')
+```
+
+Figure: The left panel is the log return original series from 01/04/2005 to
+03/20/2020. The right panel is the fitted residuals (standardized returns or pseudo-
+returns.)
+
+```{r}
+par(mfrow=c(1,2))
+qqnorm(residuals(mpq)); qqline(residuals(mpq))
+acf(residuals(mpq)^2,na.action=na.omit)
+```
+
+Figure: The left panel is the residual QQ plot. The right panel is the squared residual ACF plot.
+
+```{r}
+LLY.residual=na.omit(residuals(mpq))
+```
+
+## 1.4 Dataset 1: Stock LOW
+
+```{r}
+LOW = mysheets$LOW
+LOW.return = na.omit(LOW$`Log Return`)
+```
+
+
+The original log return series is plotted in Figure on the left panel. The fitted
+residuals (standardized returns or pseudo-returns) are plotted on the right panel.
+
+### 1.4.1 
+
+```{r}
+# prints ssr and best parameters
+best_params <- select_best_model(LOW.return)
+```
+
+
+
+```{r}
+o = capture.output(mpq <- garch(x=LOW.return,order=best_params))
+```
+
+```{r}
+summary(mpq)
+```
+
+
+The best fitted model is GARCH(2,2) with the following estimated parameter values and standard errors.
+
+Report the sum of the squared error of the final model.
+
+```{r}
+sum(na.omit(mpq$residuals)^2)
+```
+
+
+State the reason why this model is the final model.
+
+GARCH(2,2) gives the smallest sum of squared residuals for this dataset.
+
+### 1.4.2 Some diagnostic results
+
+```{r}
+shapiro.test(na.omit(residuals(mpq)))
+jarque.bera.test(na.omit(residuals(mpq)))
+cat('skewness: ', skewness(na.omit(residuals(mpq))), '\n')
+cat('kurtosis: ', kurtosis(na.omit(residuals(mpq))))
+```
+
+
+```{r}
+par(mfrow=c(1,2))
+plot(LOW$Date[-1], LOW.return, type='l', xlab='Time', ylab='Log Return')
+# plot fitted residuals of the best GARCH model
+plot(residuals(mpq),type='h',ylab='standardized residuals')
+```
+
+Figure: The left panel is the log return original series from 01/04/2005 to
+03/20/2020. The right panel is the fitted residuals (standardized returns or pseudo-
+returns.)
+
+```{r}
+par(mfrow=c(1,2))
+qqnorm(residuals(mpq)); qqline(residuals(mpq))
+acf(residuals(mpq)^2,na.action=na.omit)
+```
+
+
+Figure: The left panel is the residual QQ plot. The right panel is the squared residual ACF plot.
+
+```{r}
+LOW.residual=na.omit(residuals(mpq))
+```
+
+## 1.5 Dataset 1: Stock MCO
+
+```{r}
+MCO = mysheets$MCO
+MCO.return = na.omit(MCO$`Log Return`)
+```
+
+
+The original log return series is plotted in Figure on the left panel. The fitted
+residuals (standardized returns or pseudo-returns) are plotted on the right panel.
+
+### 1.5.1 
+
+```{r}
+# prints ssr and best parameters
+best_params <- select_best_model(MCO.return)
+```
+
+
+
+```{r}
+o = capture.output(mpq <- garch(x=MCO.return,order=best_params))
+```
+
+```{r}
+summary(mpq)
+```
+
+
+The best fitted model is GARCH(1,2) with the following estimated parameter values and standard errors.
+
+Report the sum of the squared error of the final model.
+
+```{r}
+sum(na.omit(mpq$residuals)^2)
+```
+
+
+State the reason why this model is the final model.
+
+GARCH(1,2) gives the smallest sum of squared residuals for this dataset.
+
+### 1.5.2 Some diagnostic results
+
+```{r}
+shapiro.test(na.omit(residuals(mpq)))
+jarque.bera.test(na.omit(residuals(mpq)))
+cat('skewness: ', skewness(na.omit(residuals(mpq))), '\n')
+cat('kurtosis: ', kurtosis(na.omit(residuals(mpq))))
+```
+
+
+```{r}
+par(mfrow=c(1,2))
+plot(MCO$Date[-1], MCO.return, type='l', xlab='Time', ylab='Log Return')
+# plot fitted residuals of the best GARCH model
+plot(residuals(mpq),type='h',ylab='standardized residuals')
+```
+
+Figure: The left panel is the log return original series from 01/04/2005 to
+03/20/2020. The right panel is the fitted residuals (standardized returns or pseudo-
+returns.)
+
+```{r}
+par(mfrow=c(1,2))
+qqnorm(residuals(mpq)); qqline(residuals(mpq))
+acf(residuals(mpq)^2,na.action=na.omit)
+```
+
+
+Figure: The left panel is the residual QQ plot. The right panel is the squared residual ACF plot.
+
+```{r}
+MCO.residual=na.omit(residuals(mpq))
+```
+
+## 1.6 Dataset 1: Stock MSFT
+
+```{r}
+MSFT = mysheets$MSFT
+MSFT.return = na.omit(MSFT$`Log Return`)
+```
+
+
+The original log return series is plotted in Figure on the left panel. The fitted
+residuals (standardized returns or pseudo-returns) are plotted on the right panel.
+
+### 1.6.1 
+
+```{r}
+# prints ssr and best parameters
+best_params <- select_best_model(MSFT.return)
+```
+
+
+
+```{r}
+o = capture.output(mpq <- garch(x=MSFT.return,order=best_params))
+```
+
+```{r}
+summary(mpq)
+```
+
+
+The best fitted model is GARCH(1,2) with the following estimated parameter values and standard errors.
+
+Report the sum of the squared error of the final model.
+
+```{r}
+sum(na.omit(mpq$residuals)^2)
+```
+
+
+State the reason why this model is the final model.
+
+GARCH(1,2) gives the smallest sum of squared residuals for this dataset.
+
+### 1.6.2 Some diagnostic results
+
+```{r}
+shapiro.test(na.omit(residuals(mpq)))
+jarque.bera.test(na.omit(residuals(mpq)))
+cat('skewness: ', skewness(na.omit(residuals(mpq))), '\n')
+cat('kurtosis: ', kurtosis(na.omit(residuals(mpq))))
+```
+
+
+```{r}
+par(mfrow=c(1,2))
+plot(MSFT$Date[-1], MSFT.return, type='l', xlab='Time', ylab='Log Return')
+# plot fitted residuals of the best GARCH model
+plot(residuals(mpq),type='h',ylab='standardized residuals')
+```
+
+Figure: The left panel is the log return original series from 01/04/2005 to
+03/20/2020. The right panel is the fitted residuals (standardized returns or pseudo-
+returns.)
+
+```{r}
+par(mfrow=c(1,2))
+qqnorm(residuals(mpq)); qqline(residuals(mpq))
+acf(residuals(mpq)^2,na.action=na.omit)
+```
+
+
+Figure: The left panel is the residual QQ plot. The right panel is the squared residual ACF plot.
+
+```{r}
+MSFT.residual=na.omit(residuals(mpq))
+```
+
+## 1.7 Dataset 1: Stock PFE
+
+```{r}
+PFE = mysheets$PFE
+PFE.return = na.omit(PFE$`Log Return`)
+```
+
+
+The original log return series is plotted in Figure on the left panel. The fitted
+residuals (standardized returns or pseudo-returns) are plotted on the right panel.
+
+### 1.7.1 
+
+```{r}
+# prints ssr and best parameters
+best_params <- select_best_model(PFE.return)
+```
+
+
+
+```{r}
+o = capture.output(mpq <- garch(x=PFE.return,order=best_params))
+```
+
+```{r}
+summary(mpq)
+```
+
+
+The best fitted model is GARCH(1,2) with the following estimated parameter values and standard errors.
+
+Report the sum of the squared error of the final model.
+
+```{r}
+sum(na.omit(mpq$residuals)^2)
+```
+
+
+State the reason why this model is the final model.
+
+GARCH(1,2) gives the smallest sum of squared residuals for this dataset.
+
+### 1.7.2 Some diagnostic results
+
+```{r}
+shapiro.test(na.omit(residuals(mpq)))
+jarque.bera.test(na.omit(residuals(mpq)))
+cat('skewness: ', skewness(na.omit(residuals(mpq))), '\n')
+cat('kurtosis: ', kurtosis(na.omit(residuals(mpq))))
+```
+
+
+```{r}
+par(mfrow=c(1,2))
+plot(PFE$Date[-1], PFE.return, type='l', xlab='Time', ylab='Log Return')
+# plot fitted residuals of the best GARCH model
+plot(residuals(mpq),type='h',ylab='standardized residuals')
+```
+
+Figure: The left panel is the log return original series from 01/04/2005 to
+03/20/2020. The right panel is the fitted residuals (standardized returns or pseudo-
+returns.)
+
+```{r}
+par(mfrow=c(1,2))
+qqnorm(residuals(mpq)); qqline(residuals(mpq))
+acf(residuals(mpq)^2,na.action=na.omit)
+```
+
+
+Figure: The left panel is the residual QQ plot. The right panel is the squared residual ACF plot.
+
+```{r}
+PFE.residual=na.omit(residuals(mpq))
+```
+
+## 1.8 Dataset 1: Stock ROK
+
+```{r}
+ROK = mysheets$ROK
+ROK.return = na.omit(ROK$`Log Return`)
+```
+
+
+The original log return series is plotted in Figure on the left panel. The fitted
+residuals (standardized returns or pseudo-returns) are plotted on the right panel.
+
+### 1.8.1 
+
+```{r}
+# prints ssr and best parameters
+best_params <- select_best_model(ROK.return)
+```
+
+
+
+```{r}
+o = capture.output(mpq <- garch(x=ROK.return,order=best_params))
+```
+
+```{r}
+summary(mpq)
+```
+
+
+The best fitted model is GARCH(2,1) with the following estimated parameter values and standard errors.
+
+Report the sum of the squared error of the final model.
+
+```{r}
+sum(na.omit(mpq$residuals)^2)
+```
+
+
+State the reason why this model is the final model.
+
+GARCH(1,2) gives the smallest sum of squared residuals for this dataset.
+
+### 1.8.2 Some diagnostic results
+
+```{r}
+shapiro.test(na.omit(residuals(mpq)))
+jarque.bera.test(na.omit(residuals(mpq)))
+cat('skewness: ', skewness(na.omit(residuals(mpq))), '\n')
+cat('kurtosis: ', kurtosis(na.omit(residuals(mpq))))
+```
+
+
+```{r}
+par(mfrow=c(1,2))
+plot(ROK$Date[-1], ROK.return, type='l', xlab='Time', ylab='Log Return')
+# plot fitted residuals of the best GARCH model
+plot(residuals(mpq),type='h',ylab='standardized residuals')
+```
+
+Figure: The left panel is the log return original series from 01/04/2005 to
+03/20/2020. The right panel is the fitted residuals (standardized returns or pseudo-
+returns.)
+
+```{r}
+par(mfrow=c(1,2))
+qqnorm(residuals(mpq)); qqline(residuals(mpq))
+acf(residuals(mpq)^2,na.action=na.omit)
+```
+
+Figure: The left panel is the residual QQ plot. The right panel is the squared residual ACF plot.
+
+```{r}
+ROK.residual=na.omit(residuals(mpq))
+```
+
+## 1.9 Dataset 1: Stock TRV
+
+```{r}
+TRV = mysheets$TRV
+TRV.return = na.omit(TRV$`Log Return`)
+```
+
+
+The original log return series is plotted in Figure on the left panel. The fitted
+residuals (standardized returns or pseudo-returns) are plotted on the right panel.
+
+### 1.9.1 
+
+```{r}
+# prints ssr and best parameters
+best_params <- select_best_model(TRV.return)
+```
+
+
+
+```{r}
+o = capture.output(mpq <- garch(x=TRV.return,order=best_params))
+```
+
+```{r}
+summary(mpq)
+```
+
+
+The best fitted model is GARCH(1,2) with the following estimated parameter values and standard errors.
+
+Report the sum of the squared error of the final model.
+
+```{r}
+sum(na.omit(mpq$residuals)^2)
+```
+
+
+State the reason why this model is the final model.
+
+GARCH(1,2) gives the smallest sum of squared residuals for this dataset.
+
+### 1.9.2 Some diagnostic results
+
+```{r}
+shapiro.test(na.omit(residuals(mpq)))
+jarque.bera.test(na.omit(residuals(mpq)))
+cat('skewness: ', skewness(na.omit(residuals(mpq))), '\n')
+cat('kurtosis: ', kurtosis(na.omit(residuals(mpq))))
+```
+
+
+```{r}
+par(mfrow=c(1,2))
+plot(TRV$Date[-1], TRV.return, type='l', xlab='Time', ylab='Log Return')
+# plot fitted residuals of the best GARCH model
+plot(residuals(mpq),type='h',ylab='standardized residuals')
+```
+
+Figure: The left panel is the log return original series from 01/04/2005 to
+03/20/2020. The right panel is the fitted residuals (standardized returns or pseudo-
+returns.)
+
+```{r}
+par(mfrow=c(1,2))
+qqnorm(residuals(mpq)); qqline(residuals(mpq))
+acf(residuals(mpq)^2,na.action=na.omit)
+```
+
+
+Figure: The left panel is the residual QQ plot. The right panel is the squared residual ACF plot.
+
+```{r}
+TRV.residual=na.omit(residuals(mpq))
+```
+
+## 1.10 Dataset 1: Stock TXT
+
+```{r}
+TXT = mysheets$TXT
+TXT.return = na.omit(TXT$`Log Return`)
+```
+
+
+The original log return series is plotted in Figure on the left panel. The fitted
+residuals (standardized returns or pseudo-returns) are plotted on the right panel.
+
+### 1.10.1 
+
+```{r}
+# prints ssr and best parameters
+best_params <- select_best_model(TXT.return)
+```
+
+
+
+```{r}
+o = capture.output(mpq <- garch(x=TXT.return,order=best_params))
+```
+
+```{r}
+summary(mpq)
+```
+
+
+The best fitted model is GARCH(1,2) with the following estimated parameter values and standard errors.
+
+Report the sum of the squared error of the final model.
+
+```{r}
+sum(na.omit(mpq$residuals)^2)
+```
+
+
+State the reason why this model is the final model.
+
+GARCH(1,2) gives the smallest sum of squared residuals for this dataset.
+
+### 1.10.2 Some diagnostic results
+
+```{r}
+shapiro.test(na.omit(residuals(mpq)))
+jarque.bera.test(na.omit(residuals(mpq)))
+cat('skewness: ', skewness(na.omit(residuals(mpq))), '\n')
+cat('kurtosis: ', kurtosis(na.omit(residuals(mpq))))
+```
+
+
+```{r}
+par(mfrow=c(1,2))
+plot(TXT$Date[-1], TXT.return, type='l', xlab='Time', ylab='Log Return')
+# plot fitted residuals of the best GARCH model
+plot(residuals(mpq),type='h',ylab='standardized residuals')
+```
+
+Figure: The left panel is the log return original series from 01/04/2005 to
+03/20/2020. The right panel is the fitted residuals (standardized returns or pseudo-
+returns.)
+
+```{r}
+par(mfrow=c(1,2))
+qqnorm(residuals(mpq)); qqline(residuals(mpq))
+acf(residuals(mpq)^2,na.action=na.omit)
+```
+
+
+Figure: The left panel is the residual QQ plot. The right panel is the squared residual ACF plot.
+
+```{r}
+TXT.residual=na.omit(residuals(mpq))
+```
+
+
+```{r}
+# Gather model redisuals into a data frame
+mpq_residuals = data.frame(BLL.residual, F.residual, LLY.residual, LOW.residual, MCO.residual, MSFT.residual, PFE.residual, ROK.residual, TRV.residual, TXT.residual)
+# Get log return dataframe and closing price dataframe for all 10 companies
+all_logret = mysheets$LOGRET
+all_price = mysheets$PRICE
+```
+
+
+# 2 Step 5
+
+```{r}
+c_1 = rep(1/10, 10)
+c_best = rep(0, 10)
+```
+
+
+1. Report the sample mean and sample standard deviation ($c_i=1/10$) of $r_t$.
+
+```{r}
+# Compute r_t for c_i=1/10
+rt.c1 = as.numeric(data.matrix(all_logret) %*% matrix(c_1, nrow=10, ncol=1))
+```
+
+```{r}
+cat('mean: ',mean(rt.c1), '\n')
+cat('standard deviation: ', sd(rt.c1))
+```
+
+```{r}
+# Alternative way to compute mean of r_t
+# sum(colSums(all_logret) * c_1)/3829
+```
+
+
+2. Report the sample mean and sample standard deviation ($c_i=?$) of $r_t$.
+
+```{r}
+library(Surrogate)
+```
+
+
+```{r}
+best_mean = mean(rt.c1)
+best_sd = sd(rt.c1)
+c_best = c_1
+set.seed(30)
+for (i in 1:50000){
+  c_curr = as.numeric(RandVec(a=0, b=1, s=1, n=10, m=1, Seed=sample(1:2147483647, size = 1))$`RandVecOutput`)
+  
+  rt.curr = as.numeric(data.matrix(all_logret) %*% matrix(c_curr, nrow=10, ncol=1))
+  curr_mean = mean(rt.curr)
+  curr_sd = sd(rt.curr)
+  if (curr_mean > best_mean && curr_sd <= best_sd) {
+    best_mean = curr_mean
+    best_sd = curr_sd
+    c_best = c_curr
+  }
+}
+
+cat('c_best: ', c_best, '\n')
+cat('mean: ',best_mean, '\n')
+cat('standard deviation: ', best_sd)
+
+```
+
+```{r}
+# Compute r_t for c_best
+# rt.cbest = as.numeric(data.matrix(all_logret) %*% matrix(c_best, nrow=10, ncol=1))
+```
+
+
+3. Report your optimization procedure.
+
+I used Monte Carlo method to simulate the best c vector. I generated a lot of c vectors $c(c_1,c_2,...,c_{10})$ that are uniformly distributed in the space where $c_1+c_2+...+c_{10}=1$ and $c_i\geq0$. I select the best c vector which generates the largest objective value and satisfy the condition that the std smaller than or equal to the std from c(1/10).
+
+# 3 Step 6
+
+1. Report the sample mean and sample standard deviation ($c_i=1/10$) of $r_t^\epsilon$.
+
+```{r}
+# Compute r_t^epsilon for c_i=1/10
+rtep.c1 = as.numeric(data.matrix(mpq_residuals) %*% matrix(c_1, nrow=10, ncol=1))
+```
+
+```{r}
+cat('mean: ',mean(rtep.c1), '\n')
+cat('standard deviation: ', sd(rtep.c1))
+```
+
+2. Report the sample mean and sample standard deviation ($c_i=?$) of $r_t^\epsilon$.
+
+```{r}
+best_mean = mean(rtep.c1)
+best_sd = sd(rtep.c1)
+c_best = c_1
+set.seed(10)
+for (i in 1:50000){
+  c_curr = as.numeric(RandVec(a=0, b=1, s=1, n=10, m=1, Seed=sample(1:2147483647, size = 1))$`RandVecOutput`)
+  
+  rtep.curr = as.numeric(data.matrix(mpq_residuals) %*% matrix(c_curr, nrow=10, ncol=1))
+  curr_mean = mean(rtep.curr)
+  curr_sd = sd(rtep.curr)
+  if (curr_mean > best_mean && curr_sd <= best_sd) {
+    best_mean = curr_mean
+    best_sd = curr_sd
+    c_best = c_curr
+  }
+}
+
+cat('c_best: ', c_best, '\n')
+cat('mean: ',best_mean, '\n')
+cat('standard deviation: ', best_sd)
+
+```
+
+```{r}
+# Compute r_t for c_best
+# rt.cbest = as.numeric(data.matrix(mpq_residuals) %*% matrix(c_best, nrow=10, ncol=1))
+```
+
+
+
+3. Report your optimization procedure.
+
+I used Monte Carlo method to simulate the best c vector. I generated a lot of c vectors $c(c_1,c_2,...,c_{10})$ that are uniformly distributed in the space where $c_1+c_2+...+c_{10}=1$ and $c_i\geq0$. I select the best c vector which generates the largest objective value and satisfy the condition that the std smaller than or equal to the std from c(1/10).
+
+
+# 4 Step 7
+
+```{r}
+# this is to compute r_t^p based on c_1
+# V is an intermediate vector for computation
+V = as.numeric(data.matrix(all_price) %*% matrix(c_1, nrow=10, ncol=1))
+rtp.c1 = log10(V[-1]) - log10(V[-length(V)])
+```
+
+
+1. Report the sample mean and sample standard deviation ($c_i=1/10$) of $r_t^p$.
+
+```{r}
+cat('mean: ',mean(rtp.c1), '\n')
+cat('standard deviation: ', sd(rtp.c1))
+```
+
+
+2. Report the sample mean and sample standard deviation ($c_i=?$) of $r_t^p$.
+
+```{r}
+best_mean = mean(rtp.c1)
+best_sd = sd(rtp.c1)
+c_best = c_1
+set.seed(20)
+for (i in 1:50000){
+  c_curr = as.numeric(RandVec(a=0, b=1, s=1, n=10, m=1, Seed=sample(1:2147483647, size = 1))$`RandVecOutput`)
+  
+  V = as.numeric(data.matrix(all_price) %*% matrix(c_curr, nrow=10, ncol=1))
+  rtp.curr = log10(V[-1]) - log10(V[-length(V)])
+  curr_mean = mean(rtp.curr)
+  curr_sd = sd(rtp.curr)
+  if (curr_mean > best_mean && curr_sd <= best_sd) {
+    best_mean = curr_mean
+    best_sd = curr_sd
+    c_best = c_curr
+  }
+}
+
+cat('c_best: ', c_best, '\n')
+cat('mean: ',best_mean, '\n')
+cat('standard deviation: ', best_sd)
+
+```
+
+```{r}
+# this is to compute r_t^p based on c_1
+# V is an intermediate vector for computation
+V = as.numeric(data.matrix(all_price) %*% matrix(c_best, nrow=10, ncol=1))
+rtp.cbest = log10(V[-1]) - log10(V[-length(V)])
+```
+
+
+3. Report your optimization procedure.
+
+I used Monte Carlo method to simulate the best c vector. I generated a lot of c vectors $c(c_1,c_2,...,c_{10})$ that are uniformly distributed in the space where $c_1+c_2+...+c_{10}=1$ and $c_i\geq0$. I select the best c vector which generates the largest objective value and satisfy the condition that the std smaller than or equal to the std from c(1/10).
+
+
+# 5 Step 8
+
+## 5.1 Dataset: 
+
+$r_t^p$ from $c_i=1/10$
+
+```{r}
+# prints ssr and best parameters
+best_params <- select_best_model(rtp.c1)
+```
+
+### 5.1.1 
+
+The best fitted model is GARCH(p,q) with the following estimated parameter values and standard errors.
+
+```{r}
+o = capture.output(mpq <- garch(x=rtp.c1,order=best_params))
+summary(mpq)
+```
+
+
+Report the sum of the squared error of the final model.
+
+```{r}
+sum(na.omit(mpq$residuals)^2)
+```
+
+
+State the reason why this model is the final model, instead of GARCH(1,2),
+GARCH(2,1), or GARCH(2,2).
+
+### 5.1.2 Some diagnostic results
+
+```{r}
+shapiro.test(na.omit(residuals(mpq)))
+jarque.bera.test(na.omit(residuals(mpq)))
+cat('skewness: ', skewness(na.omit(residuals(mpq))), '\n')
+cat('kurtosis: ', kurtosis(na.omit(residuals(mpq))))
+```
+
+
+
+```{r}
+par(mfrow=c(1,2))
+plot(TXT$Date[-2], rtp.c1, type='l', xlab='Time', ylab='Log Return')
+# plot fitted residuals of the best GARCH model
+plot(residuals(mpq),type='h',ylab='standardized residuals')
+```
+
+
+Figure 5.1: The left panel is the log return original series from 01/05/2005 to
+03/20/2020. The right panel is the fitted residuals (standardized returns or pseudo-
+returns.)
+
+```{r}
+par(mfrow=c(1,2))
+qqnorm(residuals(mpq)); qqline(residuals(mpq))
+acf(residuals(mpq)^2,na.action=na.omit)
+```
+
+
+Figure 5.2: The left panel is the residual QQ plot. The right panel is the squared residual ACF plot.
+
+1. Report the sample mean and sample standard deviation ($c_i=1/10$) of $\epsilon_t$.
+
+```{r}
+cat('mean: ', mean(na.omit(mpq$residuals)), "\n")
+cat('standard deviation: ', sd(na.omit(mpq$residuals)), "\n")
+```
+
+
+# 6 Step 9
+
+TODO
+
+## 6.1 Dataset: 
+
+$r_t^p$ from $c_i=?$
+
+```{r}
+# prints ssr and best parameters
+best_params <- select_best_model(rtp.cbest)
+```
+
+```{r}
+o = capture.output(mpq <- garch(x=rtp.cbest,order=best_params))
+summary(mpq)
+```
+
+
+### 6.1.1 
+
+The best fitted model is GARCH(p,q) with the following estimated parameter values and standard errors.
+
+Report the sum of the squared error of the final model.
+
+```{r}
+sum(na.omit(mpq$residuals)^2)
+```
+
+
+State the reason why this model is the final model, instead of GARCH(1,2),
+GARCH(2,1), or GARCH(2,2).
+
+### 6.1.2 Some diagnostic results
+
+```{r}
+shapiro.test(na.omit(residuals(mpq)))
+jarque.bera.test(na.omit(residuals(mpq)))
+skewness(na.omit(residuals(mpq)))
+kurtosis(na.omit(residuals(mpq)))
+```
+
+```{r}
+par(mfrow=c(1,2))
+plot(TXT$Date[-2], rtp.cbest, type='l', xlab='Time', ylab='Log Return')
+# plot fitted residuals of the best GARCH model
+plot(residuals(mpq),type='h',ylab='standardized residuals')
+```
+
+
+Figure 6.1: The left panel is the log return original series from xx/xx/xxxx to
+xx/xx/xxxx. The right panel is the fitted residuals (standardized returns or pseudo-
+returns.)
+
+```{r}
+par(mfrow=c(1,2))
+qqnorm(residuals(mpq)); qqline(residuals(mpq))
+acf(residuals(mpq)^2,na.action=na.omit)
+```
+
+
+Figure 6.2: The left panel is the residual QQ plot. The right panel is the squared residual ACF plot.
+
+1. Report the sample mean and sample standard deviation ($c_i=?$) of $\epsilon_t$.
+
+```{r}
+cat('mean: ', mean(na.omit(mpq$residuals)), "\n")
+cat('standard deviation: ', sd(na.omit(mpq$residuals)), "\n")
+```
+
+# 7 Step 10
+
+Compare results from Step 5 to Step 9. (Compare the results of the best $c_i$ and mean values.)
+
+From Step 5 to Step 7, there are 3 distinct best c vectors (Step 8 and 9 are just using the c vector from Step 7). We see that the c_best vectors from Step 5 and Step 7 are pretty close to each other. The means are also very similar (about 0.00014). This is probably because the formula of r_t and r_t^p are very similar and both are computed through similar log returns approach.
+
+However, the c_best for step 6 is very different from step 5 and 7, and the mean is also much larger than step 5 and 7. This c_best is actually close to (1/10,...,1/10). This is probably because of the fact that the GARCH models did not fit the data so well.
+
+
+
+
+
+
+
+
